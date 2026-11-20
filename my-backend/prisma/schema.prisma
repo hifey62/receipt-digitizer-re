@@ -1,0 +1,30 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+enum Category {
+  Utilities
+  Equipments
+  Groceries
+}
+
+model Receipt {
+  id       String   @id @default(uuid())
+  vendor   String
+  category Category @default(Utilities)
+  savedAt  DateTime @default(now())
+  items    Item[]
+}
+
+model Item {
+  id        String  @id @default(uuid())
+  title     String
+  price     Decimal
+  quantity  Int
+  receiptId String
+  receipt   Receipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+}
