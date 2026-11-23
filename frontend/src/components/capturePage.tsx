@@ -1,47 +1,105 @@
-
 import { useState } from "react";
 
-const [image , setImage] = useState<File| null>(null)
+interface CaptureProps {
+    review : boolean
+    setReview : React.Dispatch<React.SetStateAction<boolean>>
+}
+const CapturePage = ({review, setReview}: CaptureProps  ) => {
+  const [image, setImage] = useState<File | null>(null);
+const [preview, setPreview] = useState<string | null>(null);
 
-const sendReceipt = async ()=>{
-      const formData  = new FormData 
+  const sendReceipt = async () => {
+    const formData = new FormData();
 
-      if(!image){
-        alert("Please select a valid image file")
-        return 
-      }
+    if (!image) {
+      alert("Please select a valid image file");
+      return;
+    }
 
-      formData.append("Image", image)
+    formData.append("receiptImage", image);
 
-      try{
+    try {
+      const response =  fetch("http://localhost:3000/api/post-receipt", {
+        method: "POST",
+        body: formData,
+      });
 
-        const response = fetch("/api",{
-            method : "POST",
-            body : formData
-        })
+      const data = (await response).json;
+      setReview(true)
+      console.log("digitized receipt data", data);
+    } catch (e) {
+      console.error("upload failed", e);
+    }
+  };
+  const handleImage = (e: React.ChangeEvent<HTMLInputElement>) => {
 
-        const data = (await response).json
-        console.log("digitized receipt data" , data)
-
-      }catch(e){
-        console.error("upload failed",e)
-      }
+    if (e.target.files && e.target.files[0]) {
+        if (preview) URL.revokeObjectURL(preview);
+      setImage(e.target.files[0]);
+      setPreview(URL.createObjectURL(e.target.files[0]));
+    }
+  };
+    const clearImage = () => {
+    if (preview) URL.revokeObjectURL(preview);
+    setImage(null);
+    setPreview(null);
+    
+  
+  };
+  return (
+   <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+      <div className="w-full max-w-md p-6 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col gap-4">
         
-        
-}
-const handleImage = (e : React.ChangeEvent<HTMLInputElement>)=>{
+        {preview ? (
+          <div className="relative w-full rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
+            <img
+              src={preview}
+              alt="Receipt preview"
+              className="w-full max-h-72 object-contain mx-auto"
+            />
+            <button
+              type="button"
+              onClick={clearImage}
+              className="absolute top-2 right-2 bg-slate-900/75 hover:bg-slate-900 text-white text-xs font-medium px-2.5 py-1.5 rounded-lg transition cursor-pointer"
+            >
+              Remove
+            </button>
+          </div>
+        ) : (
+          <label
+            htmlFor="receipt"
+            className="flex flex-col items-center justify-center w-full h-44 border-2 border-dashed border-indigo-200 rounded-xl bg-indigo-50/40 hover:bg-indigo-50/80 hover:border-indigo-400 transition cursor-pointer p-4 text-center"
+          >
+            <svg className="w-8 h-8 mb-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span className="text-sm font-semibold text-indigo-700">Tap to upload receipt</span>
+            <span className="text-xs text-slate-500 mt-1">PNG, JPG, or JPEG</span>
+          </label>
+        )}
 
-    if(e.target.files && e.target.files[0]){
-        setImage(e.target.files[0])
-    } 
-}
-const CapturePage = () => {
-    return (
-        <div className="flex flex-col items-start gap-4 " >
-            <input type="file" name="file" id="receipt" accept="image/*" onChange={handleImage} />
-            <button onClick={sendReceipt}>digitize</button>
-        </div>
-    );
-}
+        <input
+       
+          type="file"
+          name="file"
+          id="receipt"
+          accept="image/*"
+          onChange={handleImage}
+          className="hidden"
+        />
+
+        <button
+          type="button"
+          onClick={sendReceipt}
+          disabled={!image}
+          className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 disabled:cursor-not-allowed active:scale-[0.99] text-white font-semibold text-sm rounded-xl shadow-sm transition cursor-pointer"
+        >
+          Digitize
+        </button>
+      </div>
+    </div>
+  );
+};
 
 export default CapturePage;
