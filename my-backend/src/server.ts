@@ -4,7 +4,7 @@ import cors from "cors"
 import multer from "multer"
 import Groq from "groq-sdk";
 import "dotenv/config";
-
+import sendDataSheet from "./services/googlespreadsheet.js";
 
 const uploads = multer({
     storage : multer.memoryStorage(),
@@ -17,6 +17,8 @@ const PORT = Number(process.env.PORT) || 3000
 
 const groq = new Groq({apiKey : process.env.GROQ_API_KEY})
 app.use(cors())
+app.use(express.json())
+
 
 
 app.get('/',(req : Request , res : Response)=>{
@@ -24,7 +26,7 @@ app.get('/',(req : Request , res : Response)=>{
 })
 
 const SYSTEM_PROMPT = `You extract data from receipt images.
-Respond with JSON only, in this shape:
+Respond with JSON only, in this shape
 {"vendor": string, "date": string, "items": [{"name": string, "price": number}], "total": number}
 Use null for any field you cannot read. Never guess.`;
 
@@ -61,17 +63,21 @@ app.post("/api/post-receipt" , uploads.single("receiptImage"),async (req: Reques
 
     const raw = completions.choices[0]?.message.content ?? "{}"
     
-      res.json(JSON.parse(raw))
+      res.json(JSON.parse(raw)) 
+  
     }catch(e){
         console.error("Error message : " , e)
          res.status(500).json({ error: "Something went wrong" });
     }
 
-   
-    
-    
+})
 
-  
+app.post("/api/save-receipt", async (req : Request , res : Response)=>{
+    console.log(req.body)
+            await sendDataSheet(req.body)   
+            res.status(200).json({
+                message:"sent sucesfully"
+            })
 })
 app.listen(PORT,()=>{
     console.log(`server is running on port ${PORT}`)

@@ -1,10 +1,20 @@
-import { useState } from "react";
-
+import React, { useState } from "react";
+interface ReceiptData{
+            vendor : string,
+            date : string,
+            items:[{
+                name:string ,
+                price: number
+            }],
+            total : number
+    }
 interface CaptureProps {
     review : boolean
-    setReview : React.Dispatch<React.SetStateAction<boolean>>
+    setReview : React.Dispatch<React.SetStateAction<boolean>>,
+    setReviewData:React.Dispatch<React.SetStateAction<ReceiptData | null>>
 }
-const CapturePage = ({review, setReview}: CaptureProps  ) => {
+
+const CapturePage = ({review, setReview, setReviewData}: CaptureProps  ) => {
   const [image, setImage] = useState<File | null>(null);
 const [preview, setPreview] = useState<string | null>(null);
 
@@ -19,14 +29,16 @@ const [preview, setPreview] = useState<string | null>(null);
     formData.append("receiptImage", image);
 
     try {
-      const response =  fetch("http://localhost:3000/api/post-receipt", {
+      const response =  await fetch("http://localhost:3000/api/post-receipt", {
         method: "POST",
         body: formData,
       });
 
-      const data = (await response).json;
+      const data = await response.json();
+      setReviewData(data)
       setReview(true)
       console.log("digitized receipt data", data);
+      setReview(true)
     } catch (e) {
       console.error("upload failed", e);
     }
@@ -47,20 +59,20 @@ const [preview, setPreview] = useState<string | null>(null);
   
   };
   return (
-   <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-      <div className="w-full max-w-md p-6 bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col gap-4">
+   
         
-        {preview ? (
-          <div className="relative w-full rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
+        <div className="">
+            {preview ? (
+          <div className="">
             <img
               src={preview}
               alt="Receipt preview"
-              className="w-full max-h-72 object-contain mx-auto"
+              className="w-1/4 justify-center m-auto"
             />
             <button
               type="button"
               onClick={clearImage}
-              className="absolute top-2 right-2 bg-slate-900/75 hover:bg-slate-900 text-white text-xs font-medium px-2.5 py-1.5 rounded-lg transition cursor-pointer"
+              className=""
             >
               Remove
             </button>
@@ -97,8 +109,8 @@ const [preview, setPreview] = useState<string | null>(null);
         >
           Digitize
         </button>
-      </div>
-    </div>
+        </div>
+   
   );
 };
 
