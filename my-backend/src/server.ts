@@ -5,6 +5,8 @@ import multer from "multer"
 import Groq from "groq-sdk";
 import "dotenv/config";
 import sendDataSheet from "./services/googlespreadsheet.js";
+import {prisma}  from "./lib/prisma.js"
+import type { title } from "node:process";
 
 const uploads = multer({
     storage : multer.memoryStorage(),
@@ -75,6 +77,26 @@ app.post("/api/post-receipt" , uploads.single("receiptImage"),async (req: Reques
 app.post("/api/save-receipt", async (req : Request , res : Response)=>{
     console.log(req.body)
             await sendDataSheet(req.body)   
+            const {vendor , items , total} = req.body
+            try {
+                    const receipt = await prisma.receipt.create({
+                        data :{
+                            vendor , 
+                            items: {
+                                create: items.map((i: any)=>({
+                                   title : i.name ,
+                                   quantity : i.quantity ?? 1,
+                                   price : i.price
+                                }))
+                            },
+                            total : total,
+                            category: "Equipments"
+                        },
+                        include : {items : true}
+                    })
+            }catch(err){
+                console.error(err)
+            }
             res.status(200).json({
                 message:"sent sucesfully"
             })
